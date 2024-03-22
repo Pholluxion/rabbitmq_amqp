@@ -9,24 +9,24 @@ Este proyecto implementa una plataforma de pagos usando una arquitectura de micr
 * **Servicio Publicador 1 (payment_request_service):**
     * Implementado con Quarkus.
     * Exporta una API REST para recibir solicitudes de pago.
-    * Envía mensajes a la cola `payments` en RabbitMQ.
+    * Envía mensajes a la cola `payments-requests` en RabbitMQ.
 * **Servicio Publicador 2 (payment_processor_service):**
     * Implementado con Quarkus.
-    * Se conecta a la cola `payments` en RabbitMQ.
+    * Se conecta a la cola `payments-requests` en RabbitMQ.
     * Procesa pagos con tarjeta de crédito utilizando un proveedor de pagos externo.
-    * Envía mensajes a la cola `payment_results` en RabbitMQ con el resultado del pago.
+    * Envía mensajes a la cola `payments` en RabbitMQ con el resultado del pago.
 * **Servicio Suscriptor 1 (payment_notification_service):**
     * Implementado con  Spring Boot.
-    * Se conecta a la cola `payment_results` en RabbitMQ.
+    * Se conecta a la cola `payments` en RabbitMQ.
     * Notifica al cliente sobre el pago exitoso a través de correo electrónico o SMS.
 * **Servicio Suscriptor 2 (order_update_service):**
     * Implementado con Spring Boot.
-    * Se conecta a la cola `payment_results` en RabbitMQ.
+    * Se conecta a la cola `payments` en RabbitMQ.
     * Actualiza el estado del pedido en el sistema de gestión.
 * **RabbitMQ:**
     * Implementa un sistema de mensajería asíncrono.
     * Se utiliza para la comunicación entre los microservicios.
-    * Dos colas: `payments` y `payment_results`.
+    * Dos colas: `payments` y `payments-requests`.
 * **Docker:**
     * Se utiliza para contenerizar y desplegar los microservicios.
     * Cada microservicio se ejecuta en su propio contenedor.
@@ -34,11 +34,11 @@ Este proyecto implementa una plataforma de pagos usando una arquitectura de micr
 **Flujo de trabajo:**
 
 1. El cliente envía una solicitud de pago al `payment_request_service`.
-2. `payment_request_service` envía un mensaje a la cola `payments` en RabbitMQ.
-3. `payment_processor_service` recibe el mensaje de la cola y procesa el pago con tarjeta de crédito.
-4. `payment_processor_service` envía un mensaje a la cola `payment_results` con el resultado del pago.
-5. `payment_notification_service ` recibe el mensaje de la cola y notifica al cliente sobre el pago exitoso.
-6. `order_update_service` recibe el mensaje de la cola y actualiza el estado del pedido en el sistema de gestión.
+2. `payment_request_service` envía un mensaje a la cola `payments-requests` en RabbitMQ.
+3. `payment_processor_service` recibe el mensaje de la cola `payments-requests` y procesa el pago.
+4. `payment_processor_service` envía un mensaje a la cola `payments` con el resultado del pago.
+5. `payment_notification_service ` recibe el mensaje de la cola `payments` y notifica al cliente sobre el pago exitoso.
+6. `order_update_service` recibe el mensaje de la cola `payments` y actualiza el estado del pedido en el sistema de gestión.
 
 **Tecnologías:**
 
