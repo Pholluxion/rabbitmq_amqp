@@ -1,12 +1,13 @@
 package com.phollux.processor;
 
 import com.phollux.model.Payment;
-import io.smallrye.common.annotation.Blocking;
+import io.smallrye.reactive.messaging.annotations.Outgoings;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 
@@ -20,8 +21,7 @@ public class Processor {
 
     @Incoming("requests")
     @Outgoing("payments")
-    @Blocking
-    public JsonObject process(JsonObject p) throws InterruptedException {
+    public String process(JsonObject p) throws InterruptedException {
 
         final Payment payment = new Payment();
         payment.setId(p.getString("id"));
@@ -30,7 +30,6 @@ public class Processor {
         payment.setPaymentStatus(p.getString("paymentStatus"));
         payment.setPaymentStatusString(p.getString("paymentStatusString"));
 
-        Thread.sleep(2000);
 
         try {
 
@@ -45,14 +44,26 @@ public class Processor {
                 payment.setPaymentStatusString("Payment failed because of insufficient funds");
             }
 
-            return JsonObject.mapFrom(payment);
-        }
-        catch (Exception e) {
+            System.out.println("Payment processed: "
+                    + payment.getAmount() + " "
+                    + payment.getPaymentType() + " "
+                    + payment.getPaymentStatusString());
+
+            return Map.of("id", payment.getId(), "amount", payment.getAmount(), "paymentType", payment.getPaymentType(), "paymentStatus", payment.getPaymentStatus(), "paymentStatusString", payment.getPaymentStatusString()).toString();
+        } catch (Exception e) {
             payment.setPaymentStatus(PAYMENT_FAILED);
             payment.setPaymentStatusString("Payment failed because of an error");
-            return JsonObject.mapFrom(payment);
+
+            System.out.println("Payment processed: "
+                    + payment.getAmount() + " "
+                    + payment.getPaymentType() + " "
+                    + payment.getPaymentStatusString());
+
+            return Map.of("id", payment.getId(), "amount", payment.getAmount(), "paymentType", payment.getPaymentType(), "paymentStatus", payment.getPaymentStatus(), "paymentStatusString", payment.getPaymentStatusString()).toString();
         }
 
 
     }
+
+
 }

@@ -2,6 +2,7 @@ package com.phollux.producer;
 
 import com.phollux.model.Payment;
 import io.smallrye.mutiny.Multi;
+import io.smallrye.reactive.messaging.annotations.Broadcast;
 import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -16,27 +17,9 @@ import java.util.*;
 public class PaymentResource {
 
     List<Payment> payments = new ArrayList<>();
+    @Broadcast
     @Channel("requests")
     Emitter<JsonObject> paymentRequestEmitter;
-
-    @Channel("payments")
-    Multi<JsonObject> paymentsStream;
-
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getPayments() {
-
-        paymentsStream.subscribe().with(
-            item -> {
-                final boolean removed = payments.removeIf(payment -> payment.getId().equals(item.getString("id")));
-                if (removed) payments.add(item.mapTo(Payment.class));
-            }
-        );
-
-
-        return Response.ok(payments).build();
-    }
 
 
     @POST

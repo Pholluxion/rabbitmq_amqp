@@ -2,7 +2,6 @@ package com.phollux.model;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
-@RegisterForReflection
 public class Payment {
     private String id;
     private String amount;
