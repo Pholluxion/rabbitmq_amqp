@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    networks:
+      - rabbitmq-net
+
+  payment_request_service:
+    image: rabbitmq/payment_request_service
+    ports:
+      - "8080:8080"
+    networks:
+      - rabbitmq-net
+
+  payment_processor_service:
+    image: rabbitmq/payment_processor_service
+    ports:
+      - "8081:8081"
+    networks:
+      - rabbitmq-net
+
+  order_update_service:
+    image: rabbitmq/order_update_service
+    ports:
+      - "8082:8082"
+    networks:
+      - rabbitmq-net
+
+  payment_notification_service:
+    image: rabbitmq/payment_notification_service
+    ports:
+      - "8083:8083"
+    networks:
+      - rabbitmq-net
+
+networks:
+  rabbitmq-net:
+    external: true

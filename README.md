@@ -54,4 +54,121 @@ Este proyecto implementa una plataforma de pagos usando una arquitectura de micr
 * **Docker: [https://docs.docker.com/](https://docs.docker.com/)**
 * **Quarkus: [https://quarkus.io/](https://quarkus.io/)**
 * **Spring Boot: [https://spring.io/projects/spring-boot](https://spring.io/projects/spring-boot)**
-  
+
+
+### Pre-requisitos
+
+* **Docker:** Instalado y funcionando ([https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/))
+* **Docker Compose (Opcional, Recomendado):** Para administrar todos los servicios ([https://docs.docker.com/compose/install/](https://docs.docker.com/compose/install/))
+* **Herramienta de Construcción:**
+  * Maven (si el proyecto usa Maven)
+  * Gradle (si el proyecto usa Gradle)
+
+### Construyendo Microservicios
+
+1. **Navega al directorio del microservicio (por ejemplo, payment_processor_service):**
+
+   ```
+   cd payment_processor_service
+   ```
+
+2. **Empaqueta el servicio (si usa Maven):**
+
+   ```
+   ./mvnw package
+   ```
+
+3. **Construye la imagen de Docker:**
+
+   ```
+   docker build -f src/main/docker/Dockerfile.jvm -t rabbitmq/payment_processor_service .
+   ```
+
+  - Esto construye una imagen llamada `rabbitmq/payment_processor_service` usando el Dockerfile ubicado en `src/main/docker/Dockerfile.jvm`. El contexto (directorio actual) se indica con `.` al final.
+
+4. **Repite los pasos 1-3 para cada directorio de microservicio:**
+
+  - `payment_request_service` (usando la herramienta de construcción adecuada)
+  - `order_update_service`
+  - `payment_notification_service`
+
+### Creando la Red RabbitMQ
+
+1. **Crea una red Docker llamada `rabbitmq-net`:**
+
+   ```
+   docker network create rabbitmq-net
+   ```
+
+### Desplegando los Servicios
+
+**Opción 1: Usando Comandos Individuales de Docker**
+
+1. **Ejecuta el contenedor RabbitMQ (opcional, se recomienda usar Docker Compose):**
+
+   ```
+   docker run --network rabbitmq-net -d -p15672:15672 -p 5672:5672 --hostname my-rabbit --name some-rabbit rabbitmq:3-management
+   ```
+
+  - Este comando inicia un contenedor RabbitMQ llamado `some-rabbit` con los puertos 15672 y 5672 mapeados a la máquina host para acceso de administración. Las opciones `--hostname` y `--name` son para mayor claridad.
+
+2. **Ejecuta los contenedores de microservicios:**
+
+   ```
+   docker run --network rabbitmq-net -d -p8080:8080 --name payment_request_service rabbitmq/payment_request_service
+   docker run --network rabbitmq-net -d -p8081:8081 --name payment_processor_service rabbitmq/payment_processor_service
+   docker run --network rabbitmq-net -d -p8082:8082 --name order_update_service rabbitmq/order_update_service
+   docker run --network rabbitmq-net -d -p8083:8083 --name payment_notification_service rabbitmq/payment_notification_service
+   ```
+
+  - Estos comandos ejecutan cada contenedor de microservicio en modo desacoplado (`-d`) con asignaciones de puertos específicas (`-p`). Los nombres de los contenedores son para mayor claridad.
+
+**Opción 2: Usando Docker Compose (Recomendado)**
+
+1. **Crea un archivo `docker-compose.yml` con el siguiente contenido:**
+
+   ```yaml
+    version: "3.8"
+    
+    services:
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - "15672:15672"
+          - "5672:5672"
+        networks:
+          - rabbitmq-net
+    
+      payment_request_service:
+        image: rabbitmq/payment_request_service
+        ports:
+          - "8080:8080"
+        networks:
+          - rabbitmq-net
+    
+      payment_processor_service:
+        image: rabbitmq/payment_processor_service
+        ports:
+          - "8081:8081"
+        networks:
+          - rabbitmq-net
+    
+      order_update_service:
+        image: rabbitmq/order_update_service
+        ports:
+          - "8082:8082"
+        networks:
+          - rabbitmq-net
+    
+      payment_notification_service:
+        image: rabbitmq/payment_notification_service
+        ports:
+          - "8083:8083"
+        networks:
+          - rabbitmq-net
+    
+    networks:
+      rabbitmq-net:
+        external: true
+    ```
+
